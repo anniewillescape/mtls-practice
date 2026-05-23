@@ -1,20 +1,19 @@
 package com.example.mtlsbatch.client;
 
 import com.example.mtlsbatch.config.SslProperties;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyStore;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class HttpClientConfig {
@@ -46,10 +45,10 @@ public class HttpClientConfig {
         return HttpClients.custom()
             .setConnectionManager(
                 PoolingHttpClientConnectionManagerBuilder.create()
-                    .setSSLSocketFactory(
-                        SSLConnectionSocketFactoryBuilder.create()
+                    .setTlsSocketStrategy(
+                        ClientTlsStrategyBuilder.create()
                             .setSslContext(sslContext)
-                            .build()
+                            .buildClassic()
                     )
                     .build()
             )

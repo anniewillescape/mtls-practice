@@ -5,6 +5,7 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.slf4j.Logger;
@@ -39,7 +40,7 @@ public class ApiBatchRunner implements CommandLineRunner {
         String url = api.baseUrl() + "/api/hello";
         log.info("[GET] Calling API: {}", url);
 
-        String responseBody = httpClient.execute(new HttpGet(url), response -> {
+        String responseBody = httpClient.execute(new HttpGet(url), (HttpContext) null, response -> {
             log.info("[GET] Response status: {}", response.getCode());
             return EntityUtils.toString(response.getEntity());
         });
@@ -58,7 +59,7 @@ public class ApiBatchRunner implements CommandLineRunner {
         HttpPost post = new HttpPost(url);
         post.setEntity(new StringEntity(requestJson, ContentType.APPLICATION_JSON));
 
-        String responseBody = httpClient.execute(post, response -> {
+        String responseBody = httpClient.execute(post, (HttpContext) null, response -> {
             log.info("[POST] Response status: {}", response.getCode());
             return EntityUtils.toString(response.getEntity());
         });
