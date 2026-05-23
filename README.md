@@ -22,6 +22,10 @@ mtls-batch                          mtls-api
         |  GET /api/hello                 |
         |<================================|
         |  { message, clientDN, ... }     |
+        |                                 |
+        |  POST /api/echo                 |
+        |================================>|
+        |  { echo: {...}, clientDN, ... } |
 ```
 
 ## 前提条件
@@ -107,7 +111,8 @@ cd mtls-batch
 成功すると以下のようなレスポンスがログに出力される。
 
 ```
-Response body: {"message":"Hello from mTLS API!","clientDN":"CN=batch-client,O=Demo,C=JP","timestamp":"..."}
+[GET] Response body: {"message":"Hello from mTLS API!","clientDN":"CN=batch-client,O=Demo,C=JP","timestamp":"..."}
+[POST] Response body: {"echo":{"message":"Hello from batch!","batchId":"batch-001"},"clientDN":"CN=batch-client,O=Demo,C=JP","timestamp":"..."}
 ```
 
 ## 動作のポイント
@@ -128,7 +133,10 @@ server:
 
 Apache HttpClient 5 で `KeyManagerFactory`（クライアント証明書）と `TrustManagerFactory`（CA検証）を明示的に設定した `SSLContext` を使っている。
 
-プライベートCAの場合はトラストストアを明示指定し、パブリックCA（Let's Encrypt等）の場合は JVM デフォルト（`cacerts`）を使用する。詳細は [`HttpClientConfig.java`](mtls-batch/src/main/java/com/example/mtlsbatch/client/HttpClientConfig.java) のコメントを参照されたい。
+トラストストアの選択は `application.yml` の `batch.ssl.truststore` の有無で自動的に切り替わる。
+
+- **設定あり** → 指定したトラストストアを使用（プライベートCA向け）
+- **設定なし** → JVM デフォルト（`cacerts`）を使用（パブリックCA向け）
 
 ## 注意事項
 

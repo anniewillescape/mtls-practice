@@ -33,13 +33,12 @@ public class HttpClientConfig {
             ssl.clientKeystorePassword().toCharArray()
         );
 
-        // プライベートCA（社内CA等）の場合：提供されたCA証明書からトラストストアを作成して使用する
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(loadKeyStore(ssl.truststore(), ssl.truststorePassword()));
-
-        // パブリックCA（Let's Encrypt、DigiCert等）の場合：以下2行に置き換える
-        // TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        // tmf.init((KeyStore) null); // null = JVMのデフォルトトラストストア（cacerts）を使用
+        if (ssl.truststore() != null) {
+            tmf.init(loadKeyStore(ssl.truststore(), ssl.truststorePassword()));
+        } else {
+            tmf.init((KeyStore) null); // JVMデフォルト(cacerts)を使用
+        }
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);

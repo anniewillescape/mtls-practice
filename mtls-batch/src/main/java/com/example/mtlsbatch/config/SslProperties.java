@@ -6,7 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record SslProperties(
     String clientKeystore,
     String clientKeystorePassword,
-    // パブリックCA（Let's Encrypt、DigiCert等）の場合、以下2フィールドは不要
-    String truststore,
+    String truststore,          // null = JVMデフォルト(cacerts)を使用
     String truststorePassword
 ) {}
