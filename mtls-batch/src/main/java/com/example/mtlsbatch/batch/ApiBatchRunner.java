@@ -2,8 +2,11 @@ package com.example.mtlsbatch.batch;
 
 import com.example.mtlsbatch.config.ApiProperties;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -26,15 +29,40 @@ public class ApiBatchRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.info("Batch job started.");
 
+        callGet();
+        callPost();
+
+        log.info("Batch job completed.");
+    }
+
+    private void callGet() throws Exception {
         String url = api.baseUrl() + "/api/hello";
-        log.info("Calling API: {}", url);
+        log.info("[GET] Calling API: {}", url);
 
         String responseBody = httpClient.execute(new HttpGet(url), response -> {
-            log.info("Response status: {}", response.getCode());
+            log.info("[GET] Response status: {}", response.getCode());
             return EntityUtils.toString(response.getEntity());
         });
 
-        log.info("Response body: {}", responseBody);
-        log.info("Batch job completed.");
+        log.info("[GET] Response body: {}", responseBody);
+    }
+
+    private void callPost() throws Exception {
+        String url = api.baseUrl() + "/api/echo";
+        log.info("[POST] Calling API: {}", url);
+
+        String requestJson = """
+                {"message": "Hello from batch!", "batchId": "batch-001"}
+                """;
+
+        HttpPost post = new HttpPost(url);
+        post.setEntity(new StringEntity(requestJson, ContentType.APPLICATION_JSON));
+
+        String responseBody = httpClient.execute(post, response -> {
+            log.info("[POST] Response status: {}", response.getCode());
+            return EntityUtils.toString(response.getEntity());
+        });
+
+        log.info("[POST] Response body: {}", responseBody);
     }
 }
