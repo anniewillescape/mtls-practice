@@ -1,0 +1,19 @@
+spring:
+  main:
+    web-application-type: none
+  output:
+    ansi:
+      enabled: always
+
+batch:
+  api:
+    base-url: https://localhost:8443
+  ssl:
+    client-keystore: ../certs/client-keystore.p12
+    client-keystore-password: password
+    truststore: ../certs/truststore-batch.p12
+    truststore-password: password
+
+logging:
+  level:
+    com.example.mtlsbatch: INFO

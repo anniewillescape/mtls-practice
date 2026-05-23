@@ -1,0 +1,20 @@
+spring:
+  output:
+    ansi:
+      enabled: always
+
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: file:../certs/server-keystore.p12
+    key-store-password: changeit
+    key-store-type: PKCS12
+    trust-store: file:../certs/truststore.p12
+    trust-store-password: changeit
+    trust-store-type: PKCS12
+    client-auth: need
+
+logging:
+  level:
+    com.example.mtlsapi: INFO
