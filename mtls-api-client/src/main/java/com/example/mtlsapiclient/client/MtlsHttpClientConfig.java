@@ -11,8 +11,7 @@ import javax.net.ssl.TrustManagerFactory;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,7 +24,7 @@ public class MtlsHttpClientConfig {
         this.ssl = ssl;
     }
 
-    @Bean(name = "mtlsHttpClient", destroyMethod = "close")
+    @Bean(destroyMethod = "close")
     public CloseableHttpClient mtlsHttpClient() throws Exception {
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(
@@ -43,14 +42,12 @@ public class MtlsHttpClientConfig {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-        SSLConnectionSocketFactory sslSocketFactory = SSLConnectionSocketFactoryBuilder.create()
-            .setSslContext(sslContext)
-            .build();
+        var tlsStrategy = new DefaultClientTlsStrategy(sslContext);
 
         return HttpClients.custom()
             .setConnectionManager(
                 PoolingHttpClientConnectionManagerBuilder.create()
-                    .setSSLSocketFactory(sslSocketFactory)
+                    .setTlsSocketStrategy(tlsStrategy)
                     .build()
             )
             .build();
