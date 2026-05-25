@@ -1,6 +1,6 @@
 package com.example.mtlsapiclient.service;
 
-import com.example.mtlsapiclient.config.ApiProperties;
+import com.example.mtlsapiclient.config.MtlsApiProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -18,12 +18,12 @@ import java.util.Map;
 public class MtlsApiService {
 
     private final CloseableHttpClient httpClient;
-    private final ApiProperties api;
+    private final MtlsApiProperties api;
     private final ObjectMapper objectMapper;
 
     public MtlsApiService(
         @Qualifier("mtlsHttpClient") CloseableHttpClient httpClient,
-        ApiProperties api,
+        MtlsApiProperties api,
         ObjectMapper objectMapper
     ) {
         this.httpClient = httpClient;
@@ -32,14 +32,14 @@ public class MtlsApiService {
     }
 
     public String getHello() throws Exception {
-        String url = api.mtlsBaseUrl() + "/api/hello";
+        String url = api.baseUrl() + "/api/hello";
         return httpClient.execute(new HttpGet(url), (HttpContext) null, response ->
             EntityUtils.toString(response.getEntity())
         );
     }
 
     public String postEcho(Map<String, Object> body) throws Exception {
-        String url = api.mtlsBaseUrl() + "/api/echo";
+        String url = api.baseUrl() + "/api/echo";
         HttpPost post = new HttpPost(url);
         post.setEntity(new StringEntity(objectMapper.writeValueAsString(body), ContentType.APPLICATION_JSON));
         return httpClient.execute(post, (HttpContext) null, response ->

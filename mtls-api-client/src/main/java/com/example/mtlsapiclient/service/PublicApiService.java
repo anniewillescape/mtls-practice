@@ -1,6 +1,6 @@
 package com.example.mtlsapiclient.service;
 
-import com.example.mtlsapiclient.config.ApiProperties;
+import com.example.mtlsapiclient.config.PublicApiProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -17,10 +17,10 @@ public class PublicApiService {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private final OkHttpClient okHttpClient;
-    private final ApiProperties api;
+    private final PublicApiProperties api;
     private final ObjectMapper objectMapper;
 
-    public PublicApiService(OkHttpClient okHttpClient, ApiProperties api, ObjectMapper objectMapper) {
+    public PublicApiService(OkHttpClient okHttpClient, PublicApiProperties api, ObjectMapper objectMapper) {
         this.okHttpClient = okHttpClient;
         this.api = api;
         this.objectMapper = objectMapper;
@@ -28,7 +28,7 @@ public class PublicApiService {
 
     public String get(String path) throws Exception {
         Request request = new Request.Builder()
-            .url(api.publicBaseUrl() + path)
+            .url(api.baseUrl() + path)
             .get()
             .build();
         try (Response response = okHttpClient.newCall(request).execute()) {
@@ -39,7 +39,7 @@ public class PublicApiService {
     public String post(String path, Map<String, Object> body) throws Exception {
         RequestBody requestBody = RequestBody.create(objectMapper.writeValueAsString(body), JSON);
         Request request = new Request.Builder()
-            .url(api.publicBaseUrl() + path)
+            .url(api.baseUrl() + path)
             .post(requestBody)
             .build();
         try (Response response = okHttpClient.newCall(request).execute()) {

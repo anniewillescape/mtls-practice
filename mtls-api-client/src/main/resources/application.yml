@@ -7,9 +7,10 @@ server:
   port: 8080
 
 client:
-  api:
-    mtls-base-url: https://localhost:8443
-    public-base-url: https://httpbin.org
+  mtls-api:
+    base-url: https://localhost:8443
+  public-api:
+    base-url: https://httpbin.org
   ssl:
     client-keystore: ../certs/client-keystore.p12
     client-keystore-password: password
