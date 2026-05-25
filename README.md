@@ -4,12 +4,15 @@ Spring Boot を使った mTLS（相互TLS認証）の動作確認用リポジト
 
 - **mtls-api** : クライアント証明書を要求するREST APIサーバ
 - **mtls-batch** : クライアント証明書を提示してAPIを呼び出すバッチ
+- **mtls-api-client** : mTLS APIと通常APIの両方を呼び出すREST APIクライアント
 
 ## アーキテクチャ
 
+**mtls-batch → mtls-api (mTLS)**
+
 ```
 mtls-batch                          mtls-api
-(CommandLineRunner)                 (Spring Boot Web)
+(CommandLineRunner)                 (Spring Boot Web / port 8443)
         |                                 |
         |  TLS ClientHello                |
         |-------------------------------->|
@@ -28,6 +31,45 @@ mtls-batch                          mtls-api
         |  { echo: {...}, clientDN, ... } |
 ```
 
+**mtls-api-client → mtls-api (mTLS / Apache HttpClient 5)**
+
+```
+mtls-api-client                     mtls-api
+(Spring Boot Web / port 8080)       (Spring Boot Web / port 8443)
+        |                                 |
+        |  TLS ClientHello                |
+        |-------------------------------->|
+        |  ServerHello + サーバ証明書      |
+        |<--------------------------------|
+        |  クライアント証明書              |
+        |-------------------------------->|
+        |  mTLS 確立 (双方向認証)          |
+        |================================>|
+        |  GET /api/hello                 |
+        |<================================|
+        |  { message, clientDN, ... }     |
+        |                                 |
+        |  POST /api/echo                 |
+        |================================>|
+        |  { echo: {...}, clientDN, ... } |
+```
+
+**mtls-api-client → 外部API (通常HTTPS / OkHttp)**
+
+```
+mtls-api-client                     外部API
+(Spring Boot Web / port 8080)       (例: httpbin.org)
+        |                                 |
+        |  HTTPS接続                      |
+        |-------------------------------->|
+        |  GET  /get                      |
+        |<--------------------------------|
+        |                                 |
+        |  POST /post                     |
+        |-------------------------------->|
+        |<--------------------------------|
+```
+
 ## 前提条件
 
 - Java 17
@@ -38,11 +80,13 @@ mtls-batch                          mtls-api
 
 ```
 .
-├── certs/
-│   ├── generate-demo-certs.sh   # 証明書生成スクリプト
-│   └── .gitkeep
-├── mtls-api/                    # APIサーバ (port 8443)
-└── mtls-batch/                  # バッチクライアント
+├── certs/                   # 証明書・キーストア
+│   └── generate-demo-certs.sh
+├── mtls-api/                # APIサーバ (port 8443, mTLS必須)
+├── mtls-batch/              # バッチクライアント (Apache HttpClient 5)
+└── mtls-api-client/         # REST APIクライアント (port 8080)
+                             #   mTLS呼び出し → Apache HttpClient 5
+                             #   通常API呼び出し → OkHttp
 ```
 
 ## セットアップ
@@ -115,6 +159,35 @@ cd mtls-batch
 [POST] Response body: {"echo":{"message":"Hello from batch!","batchId":"batch-001"},"clientDN":"CN=batch-client,O=Demo,C=JP","timestamp":"..."}
 ```
 
+### 5. APIクライアントの起動
+
+別ターミナルで実行する。
+
+```bash
+cd mtls-api-client
+./gradlew bootRun
+```
+
+`http://localhost:8080` で起動する。起動後に以下のエンドポイントへリクエストを送ることで動作確認できる。
+
+```bash
+# mTLS経由で mtls-api の GET /api/hello を呼び出す
+curl http://localhost:8080/client/mtls/hello
+
+# mTLS経由で mtls-api の POST /api/echo を呼び出す
+curl -X POST http://localhost:8080/client/mtls/echo \
+  -H "Content-Type: application/json" \
+  -d '{"message": "hello", "from": "client"}'
+
+# OkHttp経由で外部API（httpbin.org）を呼び出す
+curl http://localhost:8080/client/public/get
+
+# OkHttp経由で外部API（httpbin.org）に POST する
+curl -X POST http://localhost:8080/client/public/post \
+  -H "Content-Type: application/json" \
+  -d '{"key": "value"}'
+```
+
 ## 動作のポイント
 
 ### サーバ側（mtls-api）
@@ -137,6 +210,28 @@ Apache HttpClient 5 で `KeyManagerFactory`（クライアント証明書）と 
 
 - **設定あり** → 指定したトラストストアを使用（プライベートCA向け）
 - **設定なし** → JVM デフォルト（`cacerts`）を使用（パブリックCA向け）
+
+### クライアント側（mtls-api-client）
+
+呼び出し先に応じてHTTPクライアントを使い分けている。
+
+| 用途 | HTTPクライアント | 設定クラス |
+|---|---|---|
+| mTLS API呼び出し | Apache HttpClient 5 | `MtlsHttpClientConfig` |
+| 通常API呼び出し | OkHttp | `OkHttpClientConfig` |
+
+Apache HttpClient 5 は `SSLConnectionSocketFactory` にクライアント証明書を含む `SSLContext` を渡すことで mTLS を実現している。
+OkHttp はデフォルト設定のままで通常の HTTPS / HTTP 呼び出しに使用する。
+
+```yaml
+client:
+  api:
+    mtls-base-url: https://localhost:8443   # Apache HttpClient 5 で呼び出す
+    public-base-url: https://httpbin.org    # OkHttp で呼び出す
+  ssl:
+    client-keystore: ../certs/client-keystore.p12
+    truststore: ../certs/truststore-batch.p12
+```
 
 ## 注意事項
 
