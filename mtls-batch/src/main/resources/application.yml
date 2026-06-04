@@ -8,6 +8,9 @@ spring:
 batch:
   api:
     base-url: https://localhost:8443
+    retry:
+      max-attempts: 3
+      initial-delay-ms: 1000
   ssl:
     client-keystore: ../certs/client-keystore.p12
     client-keystore-password: password
