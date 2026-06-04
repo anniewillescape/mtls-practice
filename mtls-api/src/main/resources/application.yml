@@ -15,6 +15,11 @@ server:
     trust-store-type: PKCS12
     client-auth: need
 
+api:
+  rate-limit:
+    max-requests: 3
+    window-seconds: 10
+
 logging:
   level:
     com.example.mtlsapi: INFO
